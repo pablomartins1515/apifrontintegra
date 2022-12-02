@@ -9,10 +9,11 @@ import { storageAuthTokenGet, storageAuthTokenRemove, storageAuthTokenSave } fro
 
 export interface AuthContextDataProps {
 	user: UserDTO;
+	updateUserProfile: (userUpdated: UserDTO) => Promise<void>;
 	isLoadingUserStorageData: boolean;
 	signIn: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
-	updateUserProfile: (userUpdated: UserDTO) => Promise<void>;
+	
 }
 
 interface AuthContextProviderProps {
@@ -110,11 +111,11 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 	return (
 		<AuthContext.Provider
 			value={{
-				user,
-				isLoadingUserStorageData,
+				user,				
 				signIn,
 				signOut,
-				updateUserProfile
+				updateUserProfile,
+				isLoadingUserStorageData,
 			}}
 		>
 			{children}

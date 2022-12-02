@@ -33,9 +33,7 @@ const invalid = !! errorMessage || isInvalid;
                         bg:"gray.700",
                         borderWidth: 1,
                         borderColor:"green.500",
-                        selectionColor:'gray.300',                        
-                        selectionColor:'green.700'
-                        
+                        selectionColor:'gray.300'                       
                     }
                 }
                 />
