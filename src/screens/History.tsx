@@ -1,9 +1,9 @@
 import { useCallback, useState } from "react";
-import { Heading, VStack, SectionList, Text, useToast } from "native-base";
+import { Heading, VStack, SectionList, Text, useToast, Center } from "native-base";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { api } from "@services/api";
-
+import { useAuth } from "@hooks/useAuth";
 import { AppError } from "@utils/AppError";
 
 import { HistoryByDayDTO } from "@dtos/HistoryByDayDTO";
@@ -12,11 +12,13 @@ import { ScreenHeader } from "@components/ScreenHeader";
 import { HistoryCard } from "@components/HistoryCard";
 import { Loading } from "@components/Loading";
 
+
 export function History() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [exercises, setExercises] = useState<HistoryByDayDTO[]>([]);
 
 	const toast = useToast();
+	const { refreshedToken } = useAuth();
 
 	async function fetchHistory() {
 		try {
@@ -45,16 +47,15 @@ export function History() {
 	useFocusEffect(
 		useCallback(() => {
 			fetchHistory();
-		}, [])
+		}, [refreshedToken])
 	);
 
 	return (
 		<VStack flex={1}>
 			<ScreenHeader title="Histórico de Exercícios" />
 
-			{isLoading ? (
-				<Loading />
-			) : (
+			{
+			isLoading ? <Loading /> : (exercises?.length > 0 ?  
 				<SectionList
 					sections={exercises}
 					keyExtractor={(item) => item.id}
@@ -77,15 +78,19 @@ export function History() {
 							justifyContent: "center"
 						}
 					}
-					ListEmptyComponent={() => (
-						<Text color="gray.100" textAlign="center">
-							Não há exercícios registrados ainda. {"\n"} Vamos fazer exercícios
-							hoje?
-						</Text>
-					)}
 					showsVerticalScrollIndicator={false}
 				/>
-			)}
+				: 
+				<Center flex={1}>
+				<Text color="gray.100" textAlign="center">
+					Não há exercícios registrados ainda. {"\n"} Vamos fazer exercícios
+					hoje?
+				</Text>
+				</Center>
+				
+				)
+				
+			}
 		</VStack>
 	);
 }

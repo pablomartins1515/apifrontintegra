@@ -9,6 +9,8 @@ import { useAuth } from '@hooks/useAuth';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
+import defaultUserPhotoImg from '@assets/userPhotoDefault.png';
+
 import { api } from '@services/api';
 import { AppError } from '@utils/AppError';
 
@@ -57,11 +59,12 @@ const profileSchema = yup.object({
 export function Profile (){
     const [isUpdating, setIsUpdating] = useState(false);
     const [photoIsLoading, setPhotoIsLoading] = useState (false);
-    const[ userPhoto, setUserPhoto ] = useState ('https://www.quadrorama.com.br/wp-content/uploads/2018/05/quadro-com-foto-imagem-personalizada.png');
 
     const toast = useToast();
     const { user, updateUserProfile } = useAuth();
 
+
+    
     const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
         defaultValues:{
             name: user.name,
@@ -81,8 +84,6 @@ export function Profile (){
                 allowsEditing: true,
             });
             
-            console.log(photoSelected)
-
             if (photoSelected.cancelled) {                
                 return;
             }
@@ -90,24 +91,47 @@ export function Profile (){
             if (photoSelected.uri) {  
                 const photoInfo = await FileSystem.getInfoAsync(photoSelected.uri);
                  
-                if (photoInfo.size && (photoInfo.size /1024 / 1024) >5) {
-                    return toast.show({
-                        title:'Essa imagem é muito grande! Por favor, escolha uma de até 5MB.',
-                        placement: 'top',
-                        bgColor:'red.600'                    
+            if (photoInfo.size && (photoInfo.size /1024 / 1024) >5) {
+                return toast.show({
+                    title:'Essa imagem é muito grande! Por favor, escolha uma de até 5MB.',
+                    placement: 'top',
+                    bgColor:'red.600'                    
+                    });                    
+                }   const fileExtension = photoSelected.uri.split('.').pop();
+
+                    const photoFile = {
+                        name: `${user.name}.${fileExtension}`.toLowerCase(),
+                        uri: photoSelected.uri,
+                        type: `${photoSelected.type}/${fileExtension}`,
+                    }   as any;          
+
+                    const userPhotoUploadForm = new FormData();
+                    userPhotoUploadForm.append('avatar', photoFile);
+
+                   const avatarUpdatedResponse = await api.patch('/users/avatar', userPhotoUploadForm, {
+                        headers:{
+                            'Content-Type': 'multipart/form-data'
+                        }                        
                     });
+                        const userUpdated = user;
+                        userUpdated.avatar = avatarUpdatedResponse.data.avatar;
+                        updateUserProfile(userUpdated);                       
 
+                        //console.log(userUpdated);
+                    toast.show({
+                        title: 'Foto Atualizada!',
+                        placement:'top',                        
+                        bgColor: 'green.500'
+                    })
                 }
-
-                setUserPhoto(photoSelected.uri);   
-            }
         
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setPhotoIsLoading(false);
-     }
-    }
+            } catch (error) {
+                //console.log(error);
+                    } finally {
+                        setPhotoIsLoading(false);
+                }
+            }               
+        
 
     async function handleProfileUpdate(data:FormDataProps) {
         try {
@@ -156,8 +180,8 @@ export function Profile (){
                             /> 
                             :                           
                             <UserPhoto 
-                                source={{ uri: userPhoto }}
-                                alt= "Foto do Usuário"
+                                source={user.avatar ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` } : defaultUserPhotoImg }
+                                alt="Imagem do usuário"
                                 size={PHOTO_SIZE}
                              />
                         }                 
